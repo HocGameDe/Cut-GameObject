@@ -210,13 +210,16 @@ public class Cutter : MonoBehaviour
             foreach (var path in listPointsSplit)
             {
                 DeletePointRedundant(path);
-                generateMesh.GenerateTriangle(path);
+                
                 GameObject newObj = new GameObject();
                 newObj.AddComponent(typeof(PolygonCollider2D));
                 var polygon = newObj.GetComponent<PolygonCollider2D>();
                 polygon.SetPath(0, path.ToArray());
                 newObj.transform.localScale = Dog.Instance.transform.localScale;
                 newObj.transform.position = Dog.Instance.transform.position;
+
+                generateMesh.GenerateMeshFilter(path, newObj.transform);
+                path.Clear();
             }
         }
         void DeletePointRedundant(List<Vector2> points)

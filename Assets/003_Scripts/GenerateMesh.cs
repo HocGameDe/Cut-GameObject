@@ -1,14 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class GenerateMesh : MonoBehaviour
 {
+    [SerializeField] Material material;
+    MeshRenderer meshRenderer;
     MeshFilter meshFilter;
     Mesh mesh;
-    List<int> triangles = new List<int>();
-    List<Vector3> vertices = new List<Vector3>();
-    List<Vector2> uv = new List<Vector2>();
+    List<int> triangles;
+    List<Vector3> vertices;
+    List<Vector2> uvs;
     public bool IsAnyPointsInTriangle(Vector2 A, Vector2 B, Vector2 C, List<Vector2> points)
     {
         foreach (var point in points)
@@ -34,9 +39,17 @@ public class GenerateMesh : MonoBehaviour
     {
         return Mathf.Abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2.0f;
     }
-    public void GenerateTriangle(List<Vector2> points)
+    public void GenerateMeshFilter(List<Vector2> points, Transform target)
     {
-        triangles.Clear();
+        GenerateTriangle(points);
+        ConvertPostionToPercentUV(points);
+        vertices = new List<Vector3>();
+        foreach(var point in points) vertices.Add(point);
+        DrawMesh(target, vertices.ToArray(),triangles.ToArray(),uvs.ToArray());
+    }
+    private void GenerateTriangle(List<Vector2> points)
+    {
+        triangles = new List<int>();
         Dictionary<int, List<int>> linksVectice = new Dictionary<int, List<int>>();
         int[] linkTemp = new int[2];
         List<Vector2> linkTempVector = new List<Vector2> { Vector2.zero, Vector2.zero, Vector2.zero };
@@ -112,7 +125,7 @@ public class GenerateMesh : MonoBehaviour
             Debug.DrawLine(ConvertPositionWithScale(points[triangles[i + 2]], Dog.Instance.transform), ConvertPositionWithScale(points[triangles[i + 1]], Dog.Instance.transform), Color.red, 100, false);
         }
     }
-    private Vector2 ConvertPositionWithScale(Vector2 position, Transform target)
+    public Vector2 ConvertPositionWithScale(Vector2 position, Transform target)
     {
         Vector2 result = new Vector2();
         result.x = target.TransformPoint(position).x;
@@ -123,5 +136,40 @@ public class GenerateMesh : MonoBehaviour
     {
         foreach (var link in links) if (link.Value.Count > 0) return false;
         return true;
+    }
+    private void ConvertPostionToPercentUV(List<Vector2> points)
+    {
+        //SpriteRenderer spriteRenderer = Dog.Instance.transform.GetComponent<SpriteRenderer>();
+        //spriteRenderer.bounds.
+
+        Vector2 boundMin = new Vector2();
+        Vector2 boundMax = new Vector2();
+        var listBoundX = points.Select(p => p.x).OrderBy(p => p);
+        var listBoundY = points.Select(p => p.y).OrderBy(p => p);
+
+        boundMin.x = listBoundX.First();
+        boundMin.y = listBoundY.First();
+
+        boundMax.x = listBoundX.Last();
+        boundMax.y = listBoundY.Last();
+        Vector2 uv = new Vector2();
+        uvs = new List<Vector2>();
+        foreach (var point in points)
+        {
+            uv.x = (point.x-boundMin.x)/(boundMax.x-boundMin.x);
+            uv.y = (point.y-boundMin.y)/(boundMax.y-boundMin.y);
+            uvs.Add(uv);
+        }      
+    }
+    private void DrawMesh(Transform target, Vector3[] vertice, int[] triangles, Vector2[] uvs)
+    {
+        meshRenderer = target.AddComponent<MeshRenderer>();
+        meshRenderer.material = material;
+        //material.SetTexture = target.GetComponent<SpriteRenderer>();
+        meshFilter = target.AddComponent<MeshFilter>();
+        mesh = meshFilter.mesh;
+        mesh.vertices = vertice;
+        mesh.triangles = triangles;
+        mesh.uv = uvs;
     }
 }
