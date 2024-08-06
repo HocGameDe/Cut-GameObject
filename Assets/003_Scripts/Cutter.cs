@@ -6,15 +6,19 @@ public class Cutter : MonoBehaviour
 {
     public static Cutter Instance;
     public GenerateMesh generateMesh;
+    public Dog target;
+    public List<Dog> targets;
     [SerializeField] private Vector2 beginCutPos;
     [SerializeField] private Vector2 endCutPos;
-    [SerializeField] private Vector2 pointBeginPos;
-    [SerializeField] private Vector2 pointEndPos;
+    [SerializeField] private Vector2 pointBeginCollision;
+    [SerializeField] private Vector2 pointEndCollision;
 
     private Vector2[][] paths;
     private List<List<Vector2>> listPaths = new List<List<Vector2>>();
     private List<List<Vector2>> listPointsSplit = new List<List<Vector2>>();
     private RaycastHit2D hit;
+    private RaycastHit2D[] hits;
+    private List<List<Vector2>> pointsCollision;
     private int pathCount;
     private void Awake()
     {
@@ -51,72 +55,83 @@ public class Cutter : MonoBehaviour
     }
     private void DrawRayFromBeginCut()
     {
-        hit = Physics2D.Raycast(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos));
-        if (hit.collider != null) pointBeginPos = Dog.Instance.transform.InverseTransformPoint(hit.point);
+        hit = Physics2D.Raycast(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        if (hit.collider != null) pointBeginCollision = target.transform.InverseTransformPoint(hit.point);
+
+        hits = Physics2D.RaycastAll(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        targets = new List<Dog>();
+        pointsCollision = new List<List<Vector2>>();
+        for(int i=0;i< hits.Count() ;i++)
+        {
+            targets.Add(hits[i].collider.GetComponent<Dog>());
+            pointsCollision.Add(new List<Vector2>());
+            pointsCollision[i].Add(hits[i].point);
+        }
     }
     private void DrawRayFromEndCut()
     {
-        hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos));
-        if (hit.collider != null) pointEndPos = Dog.Instance.transform.InverseTransformPoint(hit.point);
+        hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        if (hit.collider != null) pointEndCollision = target.transform.InverseTransformPoint(hit.point);
+
+        hits = Physics2D.RaycastAll(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        for (int i = 0; i < hits.Count(); i++)
+        {
+            pointsCollision[hits.Count()-1-i].Add(hits[i].point);
+        }
     }
     private void DrawRayCut()
     {
-        hit = Physics2D.Raycast(endCutPos, Vector2.down, 0.001f);
+        hit = Physics2D.Raycast(beginCutPos, Vector2.down, 0.001f, LayerMask.GetMask("Object"));
         if (hit.collider != null)
         {
             Debug.LogWarning("Cut Fail!");
             return;
         }
+        hit = Physics2D.Raycast(endCutPos, Vector2.down, 0.001f, LayerMask.GetMask("Object"));
+        if (hit.collider != null)
+        {
+            Debug.LogWarning("Cut Fail!");
+            return;
+        }
+        else
+        {
+            hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+            if (hit.collider == null)
+            {
+                Debug.LogWarning("Cut Fail!");
+                return;
+            }
+            else target = hit.collider.GetComponent<Dog>(); 
+        }
         DrawRayFromBeginCut();
         DrawRayFromEndCut();
-        SplitGameObjectByLine();
+        foreach(var target in targets)
+        {
+            this.target = target;
+            SplitGameObjectByLine();
+        }       
     }
-    //LineEquation: Ax+By+C=0
-    // A = y2-y1
-    // B = x1-x2
-    // C = x2*y1 - x1*y2
-    float A;
-    float B;
-    float C;
-    private void CalculateLineEquation()
-    {
-        Vector3 result = LinearEquations(pointBeginPos, pointEndPos);
-        A = result.x;
-        B = result.y;
-        C = result.z;
-    }
-    private Vector3 LinearEquations(Vector3 point1, Vector3 point2)
-    {
-        Vector3 result = new Vector3();
-        result.x = point2.y - point1.y;
-        result.y = point1.x - point2.x;
-        result.z = point2.x * point1.y - point1.x * point2.y;
-        return result;
-    }
-    private bool GetValueByLine(Vector2 point)
-    {
-        return (A * point.x + B * point.y + C) > 0;
-    }
-    private Vector2 GetIntersectionPointBetweenTwoLines(Vector3 point1Line1, Vector3 point2Line1, Vector3 point1Line2, Vector3 point2Line2)
-    {
-        //coefficient Line
-        Vector3 cLine1 = LinearEquations(point1Line1, point2Line1);
-        Vector3 cLine2 = LinearEquations(point1Line2, point2Line2);
-        Vector2 result = new Vector2();
-        result.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / (cLine2.y * cLine1.x - cLine2.x * cLine1.y);
-        result.x = -cLine1.z / cLine1.x - cLine1.y * result.y / cLine1.x;
-        return result;
-    }
+    
     private void SplitGameObjectByLine()
     {
-        GetPolygon2DPaths();
-        CalculateLineEquation();
+        GetPolygon2DPaths();    
         foreach (var path in listPaths)
         {
             if (path.Count > 2) SplitPath(path);
             else Debug.LogWarning("Polygon GameObject error!");
         }
         listPaths.Clear();
+    }
+    private void GetPolygon2DPaths()
+    {
+        pathCount = target.polygonCollider2D.pathCount;
+        paths = new Vector2[pathCount][];
+        listPaths.Clear();
+        for (int i = 0; i < pathCount; i++)
+        {
+            paths[i] = target.polygonCollider2D.GetPath(i);
+            listPaths.Add(paths[i].ToList());
+        }
     }
     int indexListPathsSplit = 0;
     int temp;
@@ -145,19 +160,21 @@ public class Cutter : MonoBehaviour
             listPointsSplit.Clear();
             indexListPathsSplit = 0;
             listPointsSplit.Add(new List<Vector2>());
-            for (int i = 0; i < path.Count - 1; i++)
+            for (int i = 0; i < path.Count-1; i++)
             {
                 listPointsSplit[indexListPathsSplit].Add(path[i]);
-                if (GetValueByLine(path[i]) != GetValueByLine(path[i + 1]))
+                if (CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision,pointEndCollision,path[i]) != CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, path[i + 1]))
                 {
                     listPointsSplit.Add(new List<Vector2>());
                     indexListPathsSplit++;
                 }
             }
+            listPointsSplit[indexListPathsSplit].Add(path.Last());
         }
         void StandardHeadTail()
         {
-            if (GetValueByLine(listPointsSplit.First()[0]) == GetValueByLine(listPointsSplit.Last()[0]))
+            if (CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.First()[0]) 
+                == CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.Last()[0]))
             {
                 listPointsSplit.First().InsertRange(0, listPointsSplit.Last());
                 listPointsSplit.Remove(listPointsSplit.Last());
@@ -169,14 +186,14 @@ public class Cutter : MonoBehaviour
             indexRemove.Clear();
             for (int i = 0; i < listPointsSplit.Count; i++)
             {
-                if (IsNotClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
-                    && IsNotClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
-                    && IsNotClockwise(listPointsSplit[i]) == true)
-                {
-                    indexMain = i;
-                }
-
-                if (IsNotClockwise(listPointsSplit[i]) == false)
+                if (CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
+                    && CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
+                    && CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[i]) == true)
+                    {
+                        indexMain = i;
+                    }
+                
+                if (CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[i]) == false)
                 {
                     indexRemove.Add(i);
                 }
@@ -188,8 +205,8 @@ public class Cutter : MonoBehaviour
             {
                 int indexPointFirst = path.IndexOf(points.First());
                 int indexPointLast = path.IndexOf(points.Last());
-                Vector2 pointInsertFirst = GetIntersectionPointBetweenTwoLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginPos, pointEndPos);
-                Vector2 pointInsertLast = GetIntersectionPointBetweenTwoLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginPos, pointEndPos);
+                Vector2 pointInsertFirst = CalculatorCutSpriteRenderer.GetIntersectionPointBetweenTwoLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginCollision, pointEndCollision);
+                Vector2 pointInsertLast = CalculatorCutSpriteRenderer.GetIntersectionPointBetweenTwoLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
                 points.Insert(0, pointInsertFirst);
                 points.Add(pointInsertLast);
             }
@@ -205,65 +222,53 @@ public class Cutter : MonoBehaviour
             }
             indexRemove.Clear();
         }
-        void SpawnNewSlices()
-        {
-            foreach (var path in listPointsSplit)
-            {
-                DeletePointRedundant(path);
-                
-                GameObject newObj = new GameObject();
-                newObj.AddComponent(typeof(PolygonCollider2D));
-                var polygon = newObj.GetComponent<PolygonCollider2D>();
-                polygon.SetPath(0, path.ToArray());
-                newObj.transform.localScale = Dog.Instance.transform.localScale;
-                newObj.transform.position = Dog.Instance.transform.position;
-
-                generateMesh.GenerateMeshFilter(path, newObj.transform);
-                path.Clear();
-            }
-        }
         void DeletePointRedundant(List<Vector2> points)
         {
+            Vector2 p1;
+            Vector2 p2;
             for (int i = 0; i < points.Count; i++)
             {
-                p1 = points[i == 0 ? points.Count - 1:i-1];
+                p1 = points[i == 0 ? points.Count - 1 : i - 1];
                 p2 = points[(i + 1) % points.Count];
-                if (!generateMesh.CanFormTriangle(points[i],p1,p2))
+                if (!CalculatorCutSpriteRenderer.CanFormTriangle(points[i], p1, p2))
                 {
                     points.RemoveAt(i);
                     i--;
                 }
             }
         }
+        void SpawnNewSlices()
+        {
+            foreach (var listPoints in listPointsSplit)
+            {
+                DeletePointRedundant(listPoints);
+
+                GameObject newObj = new GameObject();
+                newObj.layer = LayerMask.NameToLayer("Object");
+                PolygonCollider2D polygon = newObj.AddComponent<PolygonCollider2D>();
+                polygon.SetPath(0, listPoints.ToArray());
+                newObj.transform.localScale = target.transform.localScale;
+                newObj.transform.position = target.transform.position;
+
+                generateMesh.GenerateMeshFilter(listPoints, newObj.transform, target.pathOrigin);
+
+                if (listPoints.Count < 2)
+                {
+                    Debug.LogError("---error---");
+                    foreach(var point in listPoints) Debug.Log(point);
+                }
+                else newObj.AddComponent<Rigidbody2D>().AddForce((CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized *3.5f, ForceMode2D.Impulse);
+                
+                Dog dogNew = newObj.AddComponent<Dog>();
+                dogNew.pathOrigin = target.pathOrigin;
+                dogNew.material = target.material;
+            }
+            target.StartAnimationCut();
+        }
+        
         //---------------------------------------------
     }
-    Vector2 p1;
-    Vector2 p2;
-    float sumS;
-    public bool IsNotClockwise(List<Vector2> points)
-    {
-        sumS = 0;
-        for (int i = 0; i < points.Count; i++)
-        {
-            p1 = points[i];
-            p2 = points[(i + 1) % points.Count];
-            sumS += (p2.x - p1.x) * (p2.y + p1.y);
-        }
-
-        return sumS < 0;
-    }
-
-    private void GetPolygon2DPaths()
-    {
-        pathCount = Dog.Instance.polygonCollider2D.pathCount;
-        paths = new Vector2[pathCount][];
-        listPaths.Clear();
-        for (int i = 0; i < pathCount; i++)
-        {
-            paths[i] = Dog.Instance.polygonCollider2D.GetPath(i);
-            listPaths.Add(paths[i].ToList());
-        }
-    }
+    
     private void OnDrawGizmos()
     {
         Gizmos.color = UnityEngine.Color.red;
