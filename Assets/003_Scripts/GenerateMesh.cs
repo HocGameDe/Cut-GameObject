@@ -10,7 +10,7 @@ public class GenerateMesh : MonoBehaviour
     List<int> triangles;
     List<Vector3> vertices;
     List<Vector2> uvs;  
-    public void GenerateMeshFilter(List<Vector2> points, Transform target, List<Vector2> path)
+    public void GenerateMeshFilter(List<Vector2> points, GameObject target, List<Vector2> path)
     {
         GenerateTriangle(points);
         ConvertPostionToPercentUV(points,path);
@@ -125,11 +125,11 @@ public class GenerateMesh : MonoBehaviour
             uvs.Add(uv);
         }
     }
-    private void DrawMesh(Transform target, Vector3[] vertice, int[] triangles, Vector2[] uvs)
+    private void DrawMesh(GameObject target, Vector3[] vertice, int[] triangles, Vector2[] uvs)
     {
-        meshRenderer = target.gameObject.AddComponent<MeshRenderer>();
+        meshRenderer = target.AddComponent<MeshRenderer>();
         meshRenderer.material = Cutter.Instance.target.material;
-        meshFilter = target.gameObject.AddComponent<MeshFilter>();
+        meshFilter = target.AddComponent<MeshFilter>();
         mesh = meshFilter.mesh;
         mesh.vertices = vertice;
         mesh.triangles = triangles;

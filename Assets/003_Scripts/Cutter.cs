@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -6,8 +7,9 @@ public class Cutter : MonoBehaviour
 {
     public static Cutter Instance;
     public GenerateMesh generateMesh;
-    public Dog target;
-    public List<Dog> targets;
+    public ObjectCanBeCut target;
+    public List<ObjectCanBeCut> targets;
+    public LayerMask layerMaskCanCut;
     [SerializeField] private Vector2 beginCutPos;
     [SerializeField] private Vector2 endCutPos;
     [SerializeField] private Vector2 pointBeginCollision;
@@ -28,13 +30,27 @@ public class Cutter : MonoBehaviour
     private void Start()
     {
         InputManager.Instance.SubEventInput(EventInputCategory.MouseDownLeft, SetBeginCutPos);
-        InputManager.Instance.SubEventInput(EventInputCategory.MouseUpLeft, ()
-        =>
-        {
-            SetEndCutPos();
-            StandardizedCutLine();
-            DrawRayCut();
-        });
+        InputManager.Instance.SubEventInput(EventInputCategory.MouseUpLeft, Cut);
+    }
+    public void Cut()
+    {
+        SetEndCutPos();
+        StandardizedCutLine();
+        DrawRayCut();
+        beginCutPos = Vector2.zero;
+        endCutPos = Vector2.zero;
+    }
+    public void EnterObject()
+    {
+        beginCutPos = InputManager.Instance.mousePoistion;
+    }
+    public void ExitObject()
+    {
+        endCutPos = InputManager.Instance.mousePoistion;
+        Vector2 direcion = endCutPos - beginCutPos;
+        beginCutPos-= direcion;
+        endCutPos+= direcion;
+        Cut();
     }
     public void SetBeginCutPos()
     {
@@ -55,59 +71,63 @@ public class Cutter : MonoBehaviour
     }
     private void DrawRayFromBeginCut()
     {
-        hit = Physics2D.Raycast(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
-        if (hit.collider != null) pointBeginCollision = target.transform.InverseTransformPoint(hit.point);
+        //hit = Physics2D.Raycast(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        //if (hit.collider != null) pointBeginCollision = target.transform.InverseTransformPoint(hit.point);
 
-        hits = Physics2D.RaycastAll(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
-        targets = new List<Dog>();
+        hits = Physics2D.RaycastAll(beginCutPos, endCutPos - beginCutPos, Vector2.Distance(beginCutPos, endCutPos), layerMaskCanCut);
+        if(hits.Length <=0||hits ==null) return;
+        targets = new List<ObjectCanBeCut>();
         pointsCollision = new List<List<Vector2>>();
         for(int i=0;i< hits.Count() ;i++)
         {
-            targets.Add(hits[i].collider.GetComponent<Dog>());
+            targets.Add(hits[i].collider.GetComponent<ObjectCanBeCut>());
             pointsCollision.Add(new List<Vector2>());
-            pointsCollision[i].Add(hits[i].point);
+            pointsCollision[i].Add(hits[i].transform.InverseTransformPoint(hits[i].point));
         }
     }
     private void DrawRayFromEndCut()
     {
-        hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
-        if (hit.collider != null) pointEndCollision = target.transform.InverseTransformPoint(hit.point);
+        //hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask(nameLayerCanCut));
+        //if (hit.collider != null) pointEndCollision = target.transform.InverseTransformPoint(hit.point);
 
-        hits = Physics2D.RaycastAll(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+        hits = Physics2D.RaycastAll(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos),layerMaskCanCut);
+        if (hits.Length <= 0 || hits == null) return;
         for (int i = 0; i < hits.Count(); i++)
         {
-            pointsCollision[hits.Count()-1-i].Add(hits[i].point);
+            pointsCollision[hits.Count() - 1 - i].Add(hits[i].transform.InverseTransformPoint(hits[i].point));
         }
     }
     private void DrawRayCut()
     {
-        hit = Physics2D.Raycast(beginCutPos, Vector2.down, 0.001f, LayerMask.GetMask("Object"));
+        hit = Physics2D.Raycast(beginCutPos, Vector2.down, 0.001f,layerMaskCanCut);
         if (hit.collider != null)
         {
-            Debug.LogWarning("Cut Fail!");
+            Debug.LogWarning("Cut Fail: BeginCutPos in ObjectCanBeCut!");
             return;
         }
-        hit = Physics2D.Raycast(endCutPos, Vector2.down, 0.001f, LayerMask.GetMask("Object"));
+        hit = Physics2D.Raycast(endCutPos, Vector2.down, 0.001f,layerMaskCanCut);
         if (hit.collider != null)
         {
-            Debug.LogWarning("Cut Fail!");
+            Debug.LogWarning("Cut Fail!: EndCutPos in ObjectCanBeCut!");
             return;
         }
         else
         {
-            hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos), LayerMask.GetMask("Object"));
+            hit = Physics2D.Raycast(endCutPos, beginCutPos - endCutPos, Vector2.Distance(beginCutPos, endCutPos),layerMaskCanCut);
             if (hit.collider == null)
             {
-                Debug.LogWarning("Cut Fail!");
+                Debug.LogWarning("Cut Fail!: GameObject Not Found!");
                 return;
             }
-            else target = hit.collider.GetComponent<Dog>(); 
+            else target = hit.collider.GetComponent<ObjectCanBeCut>(); 
         }
         DrawRayFromBeginCut();
         DrawRayFromEndCut();
         foreach(var target in targets)
         {
             this.target = target;
+            pointBeginCollision = pointsCollision[targets.IndexOf(target)][0];
+            pointEndCollision = pointsCollision[targets.IndexOf(target)][1];
             SplitGameObjectByLine();
         }       
     }
@@ -142,15 +162,20 @@ public class Cutter : MonoBehaviour
         SplitPath();
         if (listPointsSplit.Count <= 1)
         {
-            Debug.LogWarning("GameObject Not Found!");
+            Debug.LogWarning("Path Polygon GameObject Split count <=1!");
             return;
         }
         StandardHeadTail();
-        InsertCutPointIntoPoints();
+        if (listPointsSplit.Count <= 1)
+        {
+            Debug.LogWarning("Path Polygon GameObject Split count <=1 After StandradHeadTail!");
+            return;
+        }
+        InsertCutPointIntoListPointsSplit();
         if (listPointsSplit.Count > 2)
         {
             FindMainPointsIndex();
-            MergePointsFailIntoMainPoints();
+            MergePointsClockwiseIntoMainPoints();
         }
         SpawnNewSlices();
 
@@ -199,7 +224,7 @@ public class Cutter : MonoBehaviour
                 }
             }
         }
-        void InsertCutPointIntoPoints()
+        void InsertCutPointIntoListPointsSplit()
         {
             foreach (var points in listPointsSplit)
             {
@@ -211,7 +236,7 @@ public class Cutter : MonoBehaviour
                 points.Add(pointInsertLast);
             }
         }
-        void MergePointsFailIntoMainPoints()
+        void MergePointsClockwiseIntoMainPoints()
         {
             for (int i = 0; i < indexRemove.Count; i++) listPointsSplit[indexMain].AddRange(listPointsSplit[indexRemove[i]]);
             temp = 0;
@@ -222,46 +247,50 @@ public class Cutter : MonoBehaviour
             }
             indexRemove.Clear();
         }
-        void DeletePointRedundant(List<Vector2> points)
+        bool DeletePointRedundant(List<Vector2> points)
         {
+            if (points.Count < 3)
+            {
+                Debug.LogError("DeletePointRedundant error: Points count <3!");
+                return false;
+            }
             Vector2 p1;
             Vector2 p2;
             for (int i = 0; i < points.Count; i++)
-            {
+            {              
                 p1 = points[i == 0 ? points.Count - 1 : i - 1];
                 p2 = points[(i + 1) % points.Count];
                 if (!CalculatorCutSpriteRenderer.CanFormTriangle(points[i], p1, p2))
                 {
+                    if (points.Count == 3)
+                    {
+                        Debug.LogWarning("GameObject have tree ponits straight. ReCut!");
+                        return false;
+                    }
                     points.RemoveAt(i);
                     i--;
                 }
             }
+            return true;
         }
         void SpawnNewSlices()
         {
             foreach (var listPoints in listPointsSplit)
             {
-                DeletePointRedundant(listPoints);
-
-                GameObject newObj = new GameObject();
-                newObj.layer = LayerMask.NameToLayer("Object");
-                PolygonCollider2D polygon = newObj.AddComponent<PolygonCollider2D>();
-                polygon.SetPath(0, listPoints.ToArray());
-                newObj.transform.localScale = target.transform.localScale;
-                newObj.transform.position = target.transform.position;
-
-                generateMesh.GenerateMeshFilter(listPoints, newObj.transform, target.pathOrigin);
-
-                if (listPoints.Count < 2)
-                {
-                    Debug.LogError("---error---");
-                    foreach(var point in listPoints) Debug.Log(point);
-                }
-                else newObj.AddComponent<Rigidbody2D>().AddForce((CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized *3.5f, ForceMode2D.Impulse);
-                
-                Dog dogNew = newObj.AddComponent<Dog>();
-                dogNew.pathOrigin = target.pathOrigin;
-                dogNew.material = target.material;
+                if(!DeletePointRedundant(listPoints)) return;
+                GameObject newDog = new GameObject();
+                newDog.layer = target.gameObject.layer;
+                newDog.transform.position = target.transform.position;
+                newDog.transform.rotation = target.transform.rotation;
+                newDog.transform.localScale = target.transform.localScale; 
+                ObjectCanBeCut dogComponent = newDog.AddComponent<ObjectCanBeCut>();
+                dogComponent.pathOrigin = target.pathOrigin;
+                dogComponent.material = target.material;
+                dogComponent.shader = target.shader;
+                dogComponent.texture2D = target.texture2D;
+                dogComponent.polygonCollider2D.SetPath(0, listPoints.ToArray());
+                generateMesh.GenerateMeshFilter(listPoints,newDog, target.pathOrigin);
+                dogComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * 3.5f, ForceMode2D.Impulse);
             }
             target.StartAnimationCut();
         }
