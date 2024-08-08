@@ -2,9 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(PolygonCollider2D))]
-public class ObjectCanBeCut : MonoBehaviour
+public class ObjectCanBeCut : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler
 {
     public List<Vector2> pathOrigin = new List<Vector2>();
     public PolygonCollider2D polygonCollider2D;
@@ -40,5 +41,15 @@ public class ObjectCanBeCut : MonoBehaviour
     {
         gameObject.SetActive(false);
         yield return null;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Cutter.Instance.EnterObject();
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Cutter.Instance.ExitObject(this);
     }
 }
