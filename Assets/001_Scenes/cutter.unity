@@ -221,6 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 301aa5ec1a636ac48aeeb0fac7d56088, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cutContinous: 0
   generateMesh: {fileID: 0}
   target: {fileID: 0}
   targets: []
@@ -795,7 +796,6 @@ GameObject:
   - component: {fileID: 1423762512}
   - component: {fileID: 1423762516}
   - component: {fileID: 1423762515}
-  - component: {fileID: 1423762517}
   m_Layer: 6
   m_Name: Ground
   m_TagString: Untagged
@@ -1185,51 +1185,6 @@ PolygonCollider2D:
       - {x: -1.3493171, y: -0.92765546}
       - {x: -1.2334871, y: -0.92562336}
   m_UseDelaunayMesh: 0
---- !u!114 &1423762517
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1423762509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Delegates:
-  - eventID: 0
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 492545038}
-          m_TargetAssemblyTypeName: Cutter, Assembly-CSharp
-          m_MethodName: EnterObject
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-  - eventID: 1
-    callback:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 492545038}
-          m_TargetAssemblyTypeName: Cutter, Assembly-CSharp
-          m_MethodName: ExitObject
-          m_Mode: 1
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
 --- !u!1 &1510852790
 GameObject:
   m_ObjectHideFlags: 0
