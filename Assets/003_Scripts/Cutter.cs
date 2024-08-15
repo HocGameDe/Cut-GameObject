@@ -338,8 +338,8 @@ public class Cutter : MonoBehaviour
                 objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
             }
             target.StartAnimationCut();
+            GameManager.Instance.SpawnCutVfx(target.transform.TransformPoint((pointEndCollision+pointBeginCollision)/2));
         }
-
         //---------------------------------------------
     }
 
