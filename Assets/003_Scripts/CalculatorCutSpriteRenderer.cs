@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,12 +27,20 @@ public static class CalculatorCutSpriteRenderer
         //coefficient Line
         Vector3 cLine1 = LinearEquations(point1Line1, point2Line1);
         Vector3 cLine2 = LinearEquations(point1Line2, point2Line2);
-        Vector2 result = new Vector2();
-        result.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / (cLine2.y * cLine1.x - cLine2.x * cLine1.y);
-        result.x = -cLine1.z / cLine1.x - cLine1.y * result.y / cLine1.x;
+        Vector2 result;
+        if(cLine1.x==0)
+        {
+            result.y = -cLine1.z / cLine1.y;
+            result.x = (-cLine2.z - cLine2.y*result.y)/cLine2.x;
+        }
+        else
+        {
+            result.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / (cLine2.y * cLine1.x - cLine2.x * cLine1.y);
+            result.x = -cLine1.z / cLine1.x - cLine1.y * result.y / cLine1.x;
+        }
         return result;
     }
-    
+
     public static bool IsNotClockwise(List<Vector2> points)
     {
         Vector2 p1;
