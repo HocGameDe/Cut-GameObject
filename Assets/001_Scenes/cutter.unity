@@ -302,7 +302,7 @@ MonoBehaviour:
   pathOrigin: []
   polygonCollider2D: {fileID: 0}
   material: {fileID: 0}
-  shader: {fileID: -6465566751694194690, guid: 2abf86613a85ff148ad42654677b8678, type: 3}
+  shader: {fileID: -6465566751694194690, guid: 3eb4f9dd1a286d942b9dae108de651b1, type: 3}
   texture2D: {fileID: 2800000, guid: b041d6390f8b1fe4ca40b53d15985e24, type: 3}
   pixelsPerUnit: 0
 --- !u!60 &311082171
@@ -1435,7 +1435,7 @@ MonoBehaviour:
   pathOrigin: []
   polygonCollider2D: {fileID: 0}
   material: {fileID: 0}
-  shader: {fileID: -6465566751694194690, guid: 2abf86613a85ff148ad42654677b8678, type: 3}
+  shader: {fileID: -6465566751694194690, guid: 3eb4f9dd1a286d942b9dae108de651b1, type: 3}
   texture2D: {fileID: 2800000, guid: 96fcd623082fc40428cfd83223ba67da, type: 3}
   pixelsPerUnit: 0
 --- !u!1 &1117592040
@@ -2135,7 +2135,7 @@ MonoBehaviour:
   pathOrigin: []
   polygonCollider2D: {fileID: 0}
   material: {fileID: 0}
-  shader: {fileID: -6465566751694194690, guid: 2abf86613a85ff148ad42654677b8678, type: 3}
+  shader: {fileID: -6465566751694194690, guid: 3eb4f9dd1a286d942b9dae108de651b1, type: 3}
   texture2D: {fileID: 2800000, guid: c24cb0afd4055c04a80bd4bb6340752b, type: 3}
   pixelsPerUnit: 0
 --- !u!60 &1946606172
