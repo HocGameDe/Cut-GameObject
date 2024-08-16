@@ -12,9 +12,14 @@ public class ObjectCanBeCut : MonoBehaviour,IPointerEnterHandler,IPointerExitHan
     public Material material;
     public Shader shader;
     public Texture2D texture2D;
+    public float pixelsPerUnit;
     private void Awake()
     {
         polygonCollider2D = GetComponent<PolygonCollider2D>();
+        if(TryGetComponent<SpriteRenderer>(out SpriteRenderer spriteRenderer))
+        {
+            pixelsPerUnit = spriteRenderer.sprite.pixelsPerUnit;
+        };
     }
     private void OnEnable()
     {      

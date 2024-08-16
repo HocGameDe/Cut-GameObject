@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
+using static UnityEngine.GraphicsBuffer;
 
 public class GenerateMesh : MonoBehaviour
 {
@@ -10,12 +12,20 @@ public class GenerateMesh : MonoBehaviour
     List<int> triangles;
     List<Vector3> vertices;
     List<Vector2> uvs;  
-    public void GenerateMeshFilter(List<Vector2> points, GameObject target, List<Vector2> path)
+    public void GenerateMeshFilter(List<Vector2> points, GameObject target, List<Vector2> pathOrigin)
     {
         GenerateTriangle(points);
-        ConvertPostionToPercentUV(points,path);
+        ConvertPostionToPercentUV(points,pathOrigin,target);
+        Vector2 diffrentSizePercent = GetDiffrentSizePercent(pathOrigin,target);
         vertices = new List<Vector3>();
-        foreach (var point in points) vertices.Add(point);
+        float x;
+        float y;
+        for (int i=0;i<points.Count;i++)
+        {
+            x = points[i].x * diffrentSizePercent.x;
+            y = points[i].y * diffrentSizePercent.y;
+            vertices.Add(new Vector3(x,y,0));
+        }
         DrawMesh(target, vertices.ToArray(), triangles.ToArray(), uvs.ToArray());
     }
     private void GenerateTriangle(List<Vector2> points)
@@ -103,19 +113,41 @@ public class GenerateMesh : MonoBehaviour
         foreach (var link in links) if (link.Value.Count > 0) return false;
         return true;
     }
-    private void ConvertPostionToPercentUV(List<Vector2> points, List<Vector2> path)
+    void FindBoundPathOrigin(List<Vector2> pathOrigin,out Vector2 boundMin,out Vector2 boundMax)
     {
-
-        Vector2 boundMin = new Vector2();
-        Vector2 boundMax = new Vector2();
-        var listBoundX = path.Select(p => p.x).OrderBy(p => p);
-        var listBoundY = path.Select(p => p.y).OrderBy(p => p);
+        var listBoundX = pathOrigin.Select(p => p.x).OrderBy(p => p);
+        var listBoundY = pathOrigin.Select(p => p.y).OrderBy(p => p);
 
         boundMin.x = listBoundX.First();
         boundMin.y = listBoundY.First();
 
         boundMax.x = listBoundX.Last();
         boundMax.y = listBoundY.Last();
+    }
+    Vector2 GetDiffrentSizePercent(List<Vector2> pathOrigin,GameObject target)
+    {
+        Vector2 boundMin;
+        Vector2 boundMax;
+        Vector2 result;
+        FindBoundPathOrigin(pathOrigin, out boundMin, out boundMax);
+        Vector2 textureSize; 
+        Texture2D texture = target.GetComponent<ObjectCanBeCut>().texture2D;
+        textureSize.x = texture.width;
+        textureSize.y = texture.height;
+        Vector2 diffrentSizePercent;
+        float pixelsPerUnit = target.GetComponent<ObjectCanBeCut>().pixelsPerUnit;
+        diffrentSizePercent = textureSize / pixelsPerUnit;
+        result.x = diffrentSizePercent.x * 1f / (boundMax.x - boundMin.x);
+        result.y = diffrentSizePercent.y * 1f / (boundMax.y - boundMin.y);
+        return result;
+    }
+    private void ConvertPostionToPercentUV(List<Vector2> points, List<Vector2> pathOrigin,GameObject target)
+    {
+
+        Vector2 boundMin;
+        Vector2 boundMax;
+        FindBoundPathOrigin(pathOrigin,out boundMin,out boundMax);
+
         Vector2 uv = new Vector2();
         uvs = new List<Vector2>();
         foreach (var point in points)

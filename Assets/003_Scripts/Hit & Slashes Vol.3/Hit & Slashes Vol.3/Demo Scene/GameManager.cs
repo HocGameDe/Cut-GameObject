@@ -75,5 +75,7 @@ public class GameManager : MonoBehaviour
 	public void SpawnCutVfx(Vector2 pos)
 	{
         Instantiate(fx_prefabs[index_fx],pos, Quaternion.identity);
+        Instantiate(fx_prefabs[index_fx+1],pos, Quaternion.identity);
+        Instantiate(fx_prefabs[index_fx+2],pos, Quaternion.identity);
     }
 }

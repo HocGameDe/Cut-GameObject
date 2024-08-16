@@ -330,6 +330,7 @@ public class Cutter : MonoBehaviour
                 newSlice.transform.localScale = target.transform.localScale;
                 ObjectCanBeCut objectCutComponent = newSlice.AddComponent<ObjectCanBeCut>();
                 objectCutComponent.pathOrigin = target.pathOrigin;
+                objectCutComponent.pixelsPerUnit = target.pixelsPerUnit;
                 objectCutComponent.material = target.material;
                 objectCutComponent.shader = target.shader;
                 objectCutComponent.texture2D = target.texture2D;
