@@ -55,35 +55,7 @@ public class Cutter : MonoBehaviour
         DrawRayCut();
         ResetCutPos();
     }
-    public void EnterObject()
-    {
-        if (!cutting || !cutContinous) return;
-        beginCutPos = InputManager.Instance.mousePoistion;
-
-    }
-    public void ExitObject(ObjectCanBeCut target)
-    {
-        if (!cutContinous || beginCutPos == Vector2.zero || !cutting) return;
-        this.target = target;
-        endCutPos = InputManager.Instance.mousePoistion;
-        Vector2 direcion = endCutPos - beginCutPos;
-        beginCutPos -= direcion;
-        endCutPos += direcion;
-        StandardizedCutPoints();
-        FindPointBeginCollision();
-        FindPointEndCollision();
-        foreach (var item in targets)
-        {
-            if (item == this.target)
-            {
-                pointBeginCollision = pointsCollision[targets.IndexOf(item)][0];
-                pointEndCollision = pointsCollision[targets.IndexOf(item)][1];
-                CutPolygon();
-                break;
-            }
-        }
-        ResetCutPos();
-    }
+    
     public void SetBeginCutPos()
     {
         beginCutPos = InputManager.Instance.mousePoistion;
@@ -165,11 +137,11 @@ public class Cutter : MonoBehaviour
             this.target = target;
             pointBeginCollision = pointsCollision[targets.IndexOf(target)][0];
             pointEndCollision = pointsCollision[targets.IndexOf(target)][1];
-            CutPolygon();
+            CutGameObject();
         }
     }
 
-    private void CutPolygon()
+    private void CutGameObject()
     {
         GetPolygon2DPaths();
         if (listPaths.First().Count > 2) SplitPolygon(listPaths.First());
@@ -330,7 +302,35 @@ public class Cutter : MonoBehaviour
         }
         //---------------------------------------------
     }
+    public void EnterObject()
+    {
+        if (!cutting || !cutContinous) return;
+        beginCutPos = InputManager.Instance.mousePoistion;
 
+    }
+    public void ExitObject(ObjectCanBeCut target)
+    {
+        if (!cutContinous || beginCutPos == Vector2.zero || !cutting) return;
+        this.target = target;
+        endCutPos = InputManager.Instance.mousePoistion;
+        Vector2 direcion = endCutPos - beginCutPos;
+        beginCutPos -= direcion;
+        endCutPos += direcion;
+        StandardizedCutPoints();
+        FindPointBeginCollision();
+        FindPointEndCollision();
+        foreach (var item in targets)
+        {
+            if (item == this.target)
+            {
+                pointBeginCollision = pointsCollision[targets.IndexOf(item)][0];
+                pointEndCollision = pointsCollision[targets.IndexOf(item)][1];
+                CutGameObject();
+                break;
+            }
+        }
+        ResetCutPos();
+    }
     private void OnDrawGizmos()
     {
         if (beginCutPos != Vector2.zero)
