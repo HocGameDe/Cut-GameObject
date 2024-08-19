@@ -38,13 +38,14 @@ public class ObjectCanBeCut : MonoBehaviour,IPointerEnterHandler,IPointerExitHan
             return;
         }
     }
-    public void StartAnimationCut()
+    public void StartAnimationCut(Vector2 pointBeginCollision, Vector2 pointEndCollision)
     {
-        StartCoroutine(AnimationCut());
+        StartCoroutine(AnimationCut(pointBeginCollision, pointEndCollision));
     }
-    IEnumerator AnimationCut()
+    IEnumerator AnimationCut(Vector2 pointBeginCollision, Vector2 pointEndCollision)
     {
         gameObject.SetActive(false);
+        GameManager.Instance.SpawnCutVfx(transform.TransformPoint((pointEndCollision + pointBeginCollision) / 2));
         yield return null;
     }
 
