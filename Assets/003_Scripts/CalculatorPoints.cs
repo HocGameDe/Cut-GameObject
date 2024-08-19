@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public static class CalculatorCutSpriteRenderer
+public static class CalculatorPoints
 {
     //LineEquation: Ax+By+C=0
     // A = y2-y1
@@ -57,11 +58,7 @@ public static class CalculatorCutSpriteRenderer
     }
     public static bool IsAnyPointsInTriangle(Vector2 A, Vector2 B, Vector2 C, List<Vector2> points)
     {
-        foreach (var point in points)
-        {
-            if (point != A && point != B && point != C && IsPointInTriangle(A, B, C, point)) return true;
-        }
-        return false;
+        return points.Any(p => p != A && p != B && p != C && IsPointInTriangle(A, B, C, p));
     }
     public static bool IsPointInTriangle(Vector2 A, Vector2 B, Vector2 C, Vector2 D)
     {

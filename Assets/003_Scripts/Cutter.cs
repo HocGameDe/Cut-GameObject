@@ -225,8 +225,8 @@ public class Cutter : MonoBehaviour
             for (int i = 0; i < path.Count - 1; i++)
             {
                 listPointsSplit[indexListPathsSplit].Add(path[i]);
-                bool IsValueOnLeftLine_i_Diffrent_IsValueOnLeftLine_i1 = CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, path[i]) != CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, path[i + 1]);
-                bool IsNextPointOutCutLine = CalculatorCutSpriteRenderer.CanFormTriangle(path[i + 1], pointBeginCollision, pointEndCollision);
+                bool IsValueOnLeftLine_i_Diffrent_IsValueOnLeftLine_i1 = CalculatorPoints.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, path[i]) != CalculatorPoints.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, path[i + 1]);
+                bool IsNextPointOutCutLine = CalculatorPoints.CanFormTriangle(path[i + 1], pointBeginCollision, pointEndCollision);
                 if (IsValueOnLeftLine_i_Diffrent_IsValueOnLeftLine_i1 && IsNextPointOutCutLine)
                 {
                     listPointsSplit.Add(new List<Vector2>());
@@ -237,8 +237,8 @@ public class Cutter : MonoBehaviour
         }
         void StandardizedHeadTail()
         {
-            if (CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.First()[0])
-                == CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.Last()[0]))
+            if (CalculatorPoints.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.First()[0])
+                == CalculatorPoints.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPointsSplit.Last()[0]))
             {
                 listPointsSplit.First().InsertRange(0, listPointsSplit.Last());
                 listPointsSplit.Remove(listPointsSplit.Last());
@@ -250,14 +250,14 @@ public class Cutter : MonoBehaviour
             indexRemove.Clear();
             for (int i = 0; i < listPointsSplit.Count; i++)
             {
-                if (CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
-                    && CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
-                    && CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[i]) == true)
+                if (CalculatorPoints.IsNotClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
+                    && CalculatorPoints.IsNotClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
+                    && CalculatorPoints.IsNotClockwise(listPointsSplit[i]) == true)
                 {
                     indexMain = i;
                 }
 
-                if (CalculatorCutSpriteRenderer.IsNotClockwise(listPointsSplit[i]) == false)
+                if (CalculatorPoints.IsNotClockwise(listPointsSplit[i]) == false)
                 {
                     indexRemove.Add(i);
                 }
@@ -269,8 +269,8 @@ public class Cutter : MonoBehaviour
             {
                 int indexPointFirst = path.IndexOf(points.First());
                 int indexPointLast = path.IndexOf(points.Last());
-                Vector2 pointInsertFirst = CalculatorCutSpriteRenderer.GetIntersectionPointBetweenTwoLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginCollision, pointEndCollision);
-                Vector2 pointInsertLast = CalculatorCutSpriteRenderer.GetIntersectionPointBetweenTwoLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
+                Vector2 pointInsertFirst = CalculatorPoints.GetIntersectionPointBetweenTwoLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginCollision, pointEndCollision);
+                Vector2 pointInsertLast = CalculatorPoints.GetIntersectionPointBetweenTwoLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
                 points.Insert(0, pointInsertFirst);
                 points.Add(pointInsertLast);
             }
@@ -302,7 +302,7 @@ public class Cutter : MonoBehaviour
             {
                 p1 = points[i == 0 ? points.Count - 1 : i - 1];
                 p2 = points[(i + 1) % points.Count];
-                if (!CalculatorCutSpriteRenderer.CanFormTriangle(points[i], p1, p2))
+                if (!CalculatorPoints.CanFormTriangle(points[i], p1, p2))
                 {
                     if (points.Count == 3)
                     {
@@ -335,8 +335,8 @@ public class Cutter : MonoBehaviour
                 objectCutComponent.shader = target.shader;
                 objectCutComponent.texture2D = target.texture2D;
                 objectCutComponent.polygonCollider2D.SetPath(0, listPoints.ToArray());
-                generateMesh.GenerateMeshFilter(listPoints, newSlice, target.pathOrigin);
-                objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorCutSpriteRenderer.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
+                generateMesh.GenerateMeshFilter(listPoints, objectCutComponent, target.pathOrigin);
+                objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorPoints.IsValueOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
             }
             target.StartAnimationCut();
             GameManager.Instance.SpawnCutVfx(target.transform.TransformPoint((pointEndCollision+pointBeginCollision)/2));
@@ -346,7 +346,10 @@ public class Cutter : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = UnityEngine.Color.red;
-        Gizmos.DrawLine(beginCutPos, endCutPos);
+        if(beginCutPos!=Vector2.zero)
+        {
+            Gizmos.color = UnityEngine.Color.red;
+            Gizmos.DrawLine(beginCutPos, InputManager.Instance.mousePoistion);
+        }   
     }
 }
