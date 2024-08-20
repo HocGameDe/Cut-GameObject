@@ -19,8 +19,10 @@ public static class CalculatorPoints
     }
     private static bool IsPointOnSegment(Vector2 point, Vector2 start, Vector2 end)
     {
+        Vector3 linearEquation = LinearEquations(start, end);
         return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
-               Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y);
+               Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
+               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) < Mathf.Epsilon; 
     }
     public static bool IsValueOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
@@ -35,8 +37,8 @@ public static class CalculatorPoints
         if (Mathf.Abs(denominator) < Mathf.Epsilon) return null;
 
         Vector2 intersection;
-        intersection.x = (cLine2.y * cLine1.z - cLine1.y * cLine2.z) / denominator;
-        intersection.y = (cLine1.x * cLine2.z - cLine2.x * cLine1.z) / denominator;
+        intersection.x = (cLine1.y * cLine2.z - cLine2.y * cLine1.z) / denominator;
+        intersection.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / denominator;
 
         return intersection;
     }
@@ -48,8 +50,8 @@ public static class CalculatorPoints
         if (Mathf.Abs(denominator) < Mathf.Epsilon) return null;
 
         Vector2 intersection;
-        intersection.x = (cLine2.y * cLine1.z - cLine1.y * cLine2.z) / denominator;
-        intersection.y = (cLine1.x * cLine2.z - cLine2.x * cLine1.z) / denominator;
+        intersection.x = (cLine1.y * cLine2.z - cLine2.y * cLine1.z) / denominator;
+        intersection.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / denominator;
 
         if (!IsPointOnSegment(intersection, point1Line1, point2Line1)) return null;
         if (!IsPointOnSegment(intersection, point1Line2, point2Line2)) return null;

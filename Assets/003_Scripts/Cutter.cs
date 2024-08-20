@@ -227,7 +227,6 @@ public class Cutter : MonoBehaviour
                 {
                     points.Insert(0, (Vector2)pointInsertFirst);
                     points.Add((Vector2)pointInsertLast);
-                    Debug.DrawLine((Vector2)pointInsertFirst,(Vector2) pointInsertLast,Color.red,100);
                 }
                 else Debug.LogError("GetIntersectionOfLines Error!");
             }
