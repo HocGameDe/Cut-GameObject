@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +17,22 @@ public static class CalculatorPoints
         float c = -a * point1.x - b * point1.y;
         return new Vector3(a, b, c);
     }
+    public static Vector3 LinearEquations(Vector2 perpendicularLineThroughPoint, Vector2 A, Vector2 B)
+    {
+        // Hệ số của đường thẳng ban đầu ax + by + c = 0
+        Vector3 line = LinearEquations(A, B);
+        float a = line.x;
+        float b = line.y;
+
+        // Đường thẳng vuông góc với đường thẳng ban đầu có hệ số góc b/a
+        float perpendicularA = -b; // Hệ số góc mới là nghịch đảo âm
+        float perpendicularB = a;
+
+        // Tính hệ số c cho đường thẳng mới: perpendicularA * x + perpendicularB * y + c = 0
+        float perpendicularC = -(perpendicularA * perpendicularLineThroughPoint.x + perpendicularB * perpendicularLineThroughPoint.y);
+
+        return new Vector3(perpendicularA, perpendicularB, perpendicularC);
+    }
     private static bool IsPointOnSegment(Vector2 point, Vector2 start, Vector2 end)
     {
         Vector3 linearEquation = LinearEquations(start, end);
@@ -24,7 +40,7 @@ public static class CalculatorPoints
                Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
                Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) < Mathf.Epsilon; 
     }
-    public static bool IsValueOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
+    public static bool IsPointOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
         Vector3 linearEquation = LinearEquations(pointHead, pointTail);
         return (linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) > 0;
@@ -92,5 +108,45 @@ public static class CalculatorPoints
     public static float Area(Vector2 p1, Vector2 p2, Vector2 p3)
     {
         return Mathf.Abs(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2.0f;
+    }
+    public static Vector2 GetPointCloser(Vector2 point1, Vector2 point2, Vector2 target)
+    {
+        if (Vector2.Distance(point1, target) <= Vector2.Distance(point2, target)) return point1;
+        else return point2;
+    }
+    public static Vector2 GetPointBetweenLineAndNormalAtPoint(Vector2 point, Vector2 A, Vector2 B)
+    {
+        Vector2 AB = B - A;
+        Vector2 AP = point - A;
+
+        // Tích vô hướng của vector AB và AP
+        float dotProduct = Vector2.Dot(AP, AB);
+
+        // Độ dài bình phương của vector AB
+        float lengthSquaredAB = AB.sqrMagnitude;
+
+        // Tính tỉ lệ chiếu của vector AP lên AB
+        float parameter = dotProduct / lengthSquaredAB;
+
+        // Tìm điểm trên đường thẳng AB gần với điểm 'point' nhất
+        Vector2 closestPointOnLine = A + parameter * AB;
+        return closestPointOnLine;
+    }
+    public static float DistanceFromPointToLine(Vector2 point, Vector2 A, Vector2 B)
+    {
+        Vector3 linearEquation = LinearEquations(A, B);
+        float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
+        return dAB;
+    } 
+    public static float DistanceFromPointToLine(Vector2 point, Vector3 linearEquation)
+    {
+        float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
+        return dAB;
+    }
+    public static bool IsPointInsideArea(Vector2 P, Vector2 A, Vector2 B)
+    {
+        float distanceDeltaA = DistanceFromPointToLine(P, LinearEquations(A, A, B));
+        float distanceDeltaB = DistanceFromPointToLine(P, LinearEquations(B, A, B));
+        return distanceDeltaA + distanceDeltaB - Vector2.Distance(A, B) <= Mathf.Epsilon;
     }
 }
