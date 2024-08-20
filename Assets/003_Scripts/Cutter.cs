@@ -225,8 +225,9 @@ public class Cutter : MonoBehaviour
                 Vector2? pointInsertLast = CalculatorPoints.GetIntersectionOfLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
                 if (pointInsertFirst != null && pointInsertLast != null)
                 {
-                    points.Insert(0,(Vector2)pointInsertFirst);
+                    points.Insert(0, (Vector2)pointInsertFirst);
                     points.Add((Vector2)pointInsertLast);
+                    Debug.DrawLine((Vector2)pointInsertFirst,(Vector2) pointInsertLast,Color.red,100);
                 }
                 else Debug.LogError("GetIntersectionOfLines Error!");
             }
