@@ -176,9 +176,9 @@ public class Cutter : MonoBehaviour
             Debug.LogWarning("Path Polygon GameObject Split count <=1 After StandradHeadTail!");
             return;
         }
-        InsertCutPointIntoListPointsSplit(listPointsSplit);
+        InsertCutPointIntoListPointsSplit(listPointsSplit,pointBeginCollision, pointEndCollision);
         int indexListPathsSplit = 0;
-        int indexMain;
+        int indexMain = 0;
         if (listPointsSplit.Count > 2)
         {
             indexMain = FindMainPointsIndex(listPointsSplit);
@@ -215,26 +215,31 @@ public class Cutter : MonoBehaviour
                 listPointsSplit.Remove(listPointsSplit.Last());
             }
         }
-        void InsertCutPointIntoListPointsSplit(List<List<Vector2>> listPointsSplit)
+        void InsertCutPointIntoListPointsSplit(List<List<Vector2>> listPointsSplit,Vector2 pointBeginCollision, Vector2 pointEndCollision)
         {
             foreach (var points in listPointsSplit)
             {
                 int indexPointFirst = path.IndexOf(points.First());
                 int indexPointLast = path.IndexOf(points.Last());
-                Vector2 pointInsertFirst = CalculatorPoints.GetIntersectionPointBetweenTwoLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginCollision, pointEndCollision);
-                Vector2 pointInsertLast = CalculatorPoints.GetIntersectionPointBetweenTwoLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
-                points.Insert(0, pointInsertFirst);
-                points.Add(pointInsertLast);
+                Vector2? pointInsertFirst = CalculatorPoints.GetIntersectionOfLines(path[indexPointFirst], path[indexPointFirst == 0 ? path.Count - 1 : indexPointFirst - 1], pointBeginCollision, pointEndCollision);
+                Vector2? pointInsertLast = CalculatorPoints.GetIntersectionOfLines(path[indexPointLast], path[indexPointLast == path.Count - 1 ? 0 : indexPointLast + 1], pointBeginCollision, pointEndCollision);
+                if (pointInsertFirst != null && pointInsertLast != null)
+                {
+                    points.Insert(0,(Vector2)pointInsertFirst);
+                    points.Add((Vector2)pointInsertLast);
+                }
+                else Debug.LogError("GetIntersectionOfLines Error!");
             }
         }
+        
         int FindMainPointsIndex(List<List<Vector2>> listPointsSplit)
         {
             var indexMain = 0;
             for (int i = 0; i < listPointsSplit.Count; i++)
             {
-                if (CalculatorPoints.IsNotClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
-                    && CalculatorPoints.IsNotClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
-                    && CalculatorPoints.IsNotClockwise(listPointsSplit[i]) == true) indexMain = i;
+                if (CalculatorPoints.IsCounterClockwise(listPointsSplit[(i - 1 < 0) ? listPointsSplit.Count - 1 : (i - 1)]) == true
+                    && CalculatorPoints.IsCounterClockwise(listPointsSplit[(i + 1) % listPointsSplit.Count]) == true
+                    && CalculatorPoints.IsCounterClockwise(listPointsSplit[i]) == true) indexMain = i;
             }
             return indexMain;
         }
@@ -242,7 +247,7 @@ public class Cutter : MonoBehaviour
         {
             foreach (var points in listPointsSplit)
             {
-                if (CalculatorPoints.IsNotClockwise(points) == false)
+                if (CalculatorPoints.IsCounterClockwise(points) == false)
                 {
                     listPointsSplit[indexMain].AddRange(points);
                     listPointsSplit.Remove(points);

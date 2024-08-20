@@ -76,7 +76,7 @@ public class GenerateMesh : MonoBehaviour
             linkTempVector[2] = points[currentVertice];
             linkTempVector.Sort((a, b) => points.IndexOf(a).CompareTo(points.IndexOf(b)));
 
-            isNotClockwise = CalculatorPoints.IsNotClockwise(linkTempVector);
+            isNotClockwise = CalculatorPoints.IsCounterClockwise(linkTempVector);
 
             if (notAnyPointsInTriangle && isNotClockwise)
             {

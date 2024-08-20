@@ -10,39 +10,53 @@ public static class CalculatorPoints
     // A = y2-y1
     // B = x1-x2
     // C = x2*y1 - x1*y2
-    public static Vector3 LinearEquations(Vector3 point1, Vector3 point2)
+    public static Vector3 LinearEquations(Vector2 point1, Vector2 point2)
     {
-        Vector3 result = new Vector3();
-        result.x = point2.y - point1.y;
-        result.y = point1.x - point2.x;
-        result.z = point2.x * point1.y - point1.x * point2.y;
-        return result;
+        float a = point2.y - point1.y;
+        float b = point1.x - point2.x;
+        float c = -a * point1.x - b * point1.y;
+        return new Vector3(a, b, c);
+    }
+    private static bool IsPointOnSegment(Vector2 point, Vector2 start, Vector2 end)
+    {
+        return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
+               Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y);
     }
     public static bool IsValueOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
         Vector3 linearEquation = LinearEquations(pointHead, pointTail);
         return (linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) > 0;
     }
-    public static Vector2 GetIntersectionPointBetweenTwoLines(Vector3 point1Line1, Vector3 point2Line1, Vector3 point1Line2, Vector3 point2Line2)
+    public static Vector2? GetIntersectionOfLines(Vector2 point1Line1, Vector2 point2Line1, Vector2 point1Line2, Vector2 point2Line2)
     {
-        //coefficient Line
         Vector3 cLine1 = LinearEquations(point1Line1, point2Line1);
         Vector3 cLine2 = LinearEquations(point1Line2, point2Line2);
-        Vector2 result;
-        if(cLine1.x==0)
-        {
-            result.y = -cLine1.z / cLine1.y;
-            result.x = (-cLine2.z - cLine2.y*result.y)/cLine2.x;
-        }
-        else
-        {
-            result.y = (cLine2.x * cLine1.z - cLine1.x * cLine2.z) / (cLine2.y * cLine1.x - cLine2.x * cLine1.y);
-            result.x = -cLine1.z / cLine1.x - cLine1.y * result.y / cLine1.x;
-        }
-        return result;
-    }
+        float denominator = cLine1.x * cLine2.y - cLine2.x * cLine1.y;
+        if (Mathf.Abs(denominator) < Mathf.Epsilon) return null;
 
-    public static bool IsNotClockwise(List<Vector2> points)
+        Vector2 intersection;
+        intersection.x = (cLine2.y * cLine1.z - cLine1.y * cLine2.z) / denominator;
+        intersection.y = (cLine1.x * cLine2.z - cLine2.x * cLine1.z) / denominator;
+
+        return intersection;
+    }
+    public static Vector2? GetIntersectionOfSegment(Vector2 point1Line1, Vector2 point2Line1, Vector2 point1Line2, Vector2 point2Line2)
+    {
+        Vector3 cLine1 = LinearEquations(point1Line1, point2Line1);
+        Vector3 cLine2 = LinearEquations(point1Line2, point2Line2);
+        float denominator = cLine1.x * cLine2.y - cLine2.x * cLine1.y;
+        if (Mathf.Abs(denominator) < Mathf.Epsilon) return null;
+
+        Vector2 intersection;
+        intersection.x = (cLine2.y * cLine1.z - cLine1.y * cLine2.z) / denominator;
+        intersection.y = (cLine1.x * cLine2.z - cLine2.x * cLine1.z) / denominator;
+
+        if (!IsPointOnSegment(intersection, point1Line1, point2Line1)) return null;
+        if (!IsPointOnSegment(intersection, point1Line2, point2Line2)) return null;
+
+        return intersection;
+    }
+    public static bool IsCounterClockwise(List<Vector2> points)
     {
         Vector2 p1;
         Vector2 p2;
