@@ -33,12 +33,12 @@ public static class CalculatorPoints
 
         return new Vector3(perpendicularA, perpendicularB, perpendicularC);
     }
-    private static bool IsPointOnSegment(Vector2 point, Vector2 start, Vector2 end)
+    public static bool IsPointOnSegment(Vector2 point, Vector2 start, Vector2 end)
     {
         Vector3 linearEquation = LinearEquations(start, end);
         return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
                Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
-               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) < Mathf.Epsilon; 
+               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= Mathf.Epsilon; 
     }
     public static bool IsPointOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {

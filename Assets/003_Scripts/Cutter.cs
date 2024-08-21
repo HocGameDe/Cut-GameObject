@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 [RequireComponent(typeof(GenerateMesh))]
 public class Cutter : MonoBehaviour
@@ -184,7 +185,7 @@ public class Cutter : MonoBehaviour
             indexMain = GetMainPointsIndex(listPointsSplit);
             MergePointsClockwiseIntoMainPoints(listPointsSplit, indexMain);
         }
-        SpawnNewSlices(listPointsSplit);
+        SpawnSlices(listPointsSplit);
 
         //Method in Method-----------------------------
         List<List<Vector2>> GetPointsSplit(List<Vector2> path, Vector2 pointBeginCollision, Vector2 pointEndCollision)
@@ -235,12 +236,13 @@ public class Cutter : MonoBehaviour
         }
         void MergePointsClockwiseIntoMainPoints(List<List<Vector2>> listPointsSplit, int indexMain)
         {
-            foreach (var points in listPointsSplit)
+            for (int i = 0; i < listPointsSplit.Count; i++)
             {
-                if (CalculatorPoints.IsCounterClockwise(points) == false)
+                if (CalculatorPoints.IsCounterClockwise(listPointsSplit[i]) == false)
                 {
-                    listPointsSplit[indexMain].AddRange(points);
-                    listPointsSplit.Remove(points);
+                    listPointsSplit[indexMain].AddRange(listPointsSplit[i]);
+                    listPointsSplit.RemoveAt(i);
+                    i--;
                 }
             }
         }
@@ -290,71 +292,105 @@ public class Cutter : MonoBehaviour
         void AddEmptyPolygon(List<Vector2> pointsSplit, PolygonCollider2D polygonCollider2D)
         {
             if (listPaths.Count <= 1) return;
-            DeletePointRedundant(listPaths[1]);
-            List<Vector2> pointsEmpty = new List<Vector2>();
-            bool direction = CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), pointsSplit[1]);
-            bool isFirst = true;
-            bool directionPoint;
-            int index = 0;
-            foreach (var point in listPaths[1])
+            List<List<Vector2>> listPointsEmpty = new List<List<Vector2>>();
+            foreach (var path in listPaths.Skip(1))
             {
-                directionPoint = CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), point);
-                if (isFirst && directionPoint == direction)
+                DeletePointRedundant(path);
+                List<Vector2> pointsEmpty = new List<Vector2>();
+                bool direction = CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), pointsSplit[1]);
+                bool isFirst = true;
+                bool directionPoint;
+                int index = 0;
+                foreach (var point in path)
                 {
-                    pointsEmpty.Add(point);
+                    directionPoint = CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), point);
+                    if (isFirst && directionPoint == direction)
+                    {
+                        pointsEmpty.Add(point);
+                    }
+                    else if (isFirst && directionPoint != direction)
+                    {
+                        isFirst = false;
+                    }
+                    else if (directionPoint == direction)
+                    {
+                        pointsEmpty.Insert(index, point);
+                        index++;
+                    }
                 }
-                else if (isFirst && directionPoint != direction)
+                if (pointsEmpty.Count <= 0) continue;
+                if (pointsEmpty.Count == path.Count)
                 {
-                    isFirst = false;
+                    polygonCollider2D.pathCount++;
+                    polygonCollider2D.SetPath(polygonCollider2D.pathCount - 1, pointsEmpty);
                 }
-                else if (directionPoint == direction)
+                else
                 {
-                    pointsEmpty.Insert(index, point);
-                    index++;
+                    InsertCutPointIntoPoints(path, pointsEmpty, pointsSplit.First(), pointsSplit.Last());
+                    pointsEmpty.Reverse<Vector2>();
+                    listPointsEmpty.Add(pointsEmpty);
                 }
             }
-            if (pointsEmpty.Count <= 0) return;
-            if (pointsEmpty.Count == listPaths[1].Count)
+            if (listPointsEmpty.Count > 0)
             {
-                polygonCollider2D.pathCount++;
-                polygonCollider2D.SetPath(1, pointsEmpty);
-            }
-            else
-            {
-                InsertCutPointIntoPoints(listPaths[1], pointsEmpty, pointsSplit.First(), pointsSplit.Last());
-                pointsEmpty.Reverse<Vector2>();
-                pointsSplit.AddRange(pointsEmpty);
+                listPointsEmpty.OrderBy(points => Vector2.Distance(points.First(), pointsSplit.Last()));
+                //foreach (var pointsEmpty in listPointsEmpty)
+                //{
+                //    if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit.First(), pointsSplit.Last())
+                //        && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit.First(), pointsSplit.Last()))
+                //    {
+                //        pointsSplit.AddRange(pointsEmpty);
+                //    }
+                //    else
+                //    {
+                //        for (int i = 0; i < pointsSplit.Count - 1; i++)
+                //        {
+                //            if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit[i], pointsSplit[i + 1])
+                //                && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit[i], pointsSplit[i + 1]))
+                //            {
+
+                //            }
+                //        }
+                //    }
+                //}
+                pointsSplit.AddRange(listPointsEmpty.SelectMany(point => point).ToList().Distinct());
                 polygonCollider2D.SetPath(0, pointsSplit);
             }
 
 
+            //pointsSplit.AddRange(listPointsEmpty.SelectMany(point => point).ToList().Distinct());
+            //polygonCollider2D.SetPath(0, pointsSplit);
         }
-        void SpawnNewSlices(List<List<Vector2>> listPointsSplit)
+        void SpawnSlices(List<List<Vector2>> listPointsSplit)
         {
             if (listPointsSplit.Any(listPoints => !DeletePointRedundant(listPoints))) return;
             foreach (var listPoints in listPointsSplit)
             {
-                GameObject newSlice = new GameObject();
-                newSlice.layer = target.gameObject.layer;
-                newSlice.transform.position = target.transform.position;
-                newSlice.transform.rotation = target.transform.rotation;
-                newSlice.transform.localScale = target.transform.localScale;
-                ObjectCanBeCut objectCutComponent = newSlice.AddComponent<ObjectCanBeCut>();
-                objectCutComponent.pathOrigin = target.pathOrigin;
-                objectCutComponent.pixelsPerUnit = target.pixelsPerUnit;
-                objectCutComponent.material = target.material;
-                objectCutComponent.shader = target.shader;
-                objectCutComponent.texture2D = target.texture2D;
-                objectCutComponent.polygonCollider2D.SetPath(0, listPoints);
-
-                AddEmptyPolygon(listPoints, objectCutComponent.polygonCollider2D);
-                generateMesh.GenerateMeshFilter(listPoints, objectCutComponent, target.pathOrigin);
-                objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorPoints.IsPointOnLeftLine(pointBeginCollision, pointEndCollision, listPoints[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
-
+                SpawnNewSlice(listPoints);
             }
             target.StartAnimationCut(pointBeginCollision, pointEndCollision);
         }
+        void SpawnNewSlice(List<Vector2> points)
+        {
+            GameObject newSlice = new GameObject();
+            newSlice.layer = target.gameObject.layer;
+            newSlice.transform.position = target.transform.position;
+            newSlice.transform.rotation = target.transform.rotation;
+            newSlice.transform.localScale = target.transform.localScale;
+            ObjectCanBeCut objectCutComponent = newSlice.AddComponent<ObjectCanBeCut>();
+            objectCutComponent.pathOrigin = target.pathOrigin;
+            objectCutComponent.pixelsPerUnit = target.pixelsPerUnit;
+            objectCutComponent.material = target.material;
+            objectCutComponent.shader = target.shader;
+            objectCutComponent.texture2D = target.texture2D;
+            objectCutComponent.polygonCollider2D.SetPath(0, points);
 
+            generateMesh.GenerateMeshFilter(points, objectCutComponent, target.pathOrigin);
+            AddEmptyPolygon(points, objectCutComponent.polygonCollider2D);
+
+            objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorPoints.IsPointOnLeftLine(pointBeginCollision, pointEndCollision, points[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
+
+        }
         //---------------------------------------------
     }
 
