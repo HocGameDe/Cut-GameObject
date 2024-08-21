@@ -38,12 +38,12 @@ public static class CalculatorPoints
         Vector3 linearEquation = LinearEquations(start, end);
         return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
                Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
-               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= Mathf.Epsilon; 
+               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= 0.001f; 
     }
     public static bool IsPointOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
         Vector3 linearEquation = LinearEquations(pointHead, pointTail);
-        return (linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) > 0;
+        return (linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) >= 0;
     }
     public static Vector2? GetIntersectionOfLines(Vector2 point1Line1, Vector2 point2Line1, Vector2 point1Line2, Vector2 point2Line2)
     {
@@ -143,10 +143,10 @@ public static class CalculatorPoints
         float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
         return dAB;
     }
-    public static bool IsPointInsideArea(Vector2 P, Vector2 A, Vector2 B)
+    public static bool IsPointInsideArea(Vector2 point, Vector2 A, Vector2 B)
     {
-        float distanceDeltaA = DistanceFromPointToLine(P, LinearEquations(A, A, B));
-        float distanceDeltaB = DistanceFromPointToLine(P, LinearEquations(B, A, B));
+        float distanceDeltaA = DistanceFromPointToLine(point, LinearEquations(A, A, B));
+        float distanceDeltaB = DistanceFromPointToLine(point, LinearEquations(B, A, B));
         return distanceDeltaA + distanceDeltaB - Vector2.Distance(A, B) <= Mathf.Epsilon;
     }
 }

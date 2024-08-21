@@ -1,6 +1,6 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -308,7 +308,7 @@ public class Cutter : MonoBehaviour
                     {
                         pointsEmpty.Add(point);
                     }
-                    else if (isFirst && directionPoint != direction)
+                    else if (isFirst && directionPoint != direction) //####
                     {
                         isFirst = false;
                     }
@@ -333,33 +333,32 @@ public class Cutter : MonoBehaviour
             }
             if (listPointsEmpty.Count > 0)
             {
-                listPointsEmpty.OrderBy(points => Vector2.Distance(points.First(), pointsSplit.Last()));
-                //foreach (var pointsEmpty in listPointsEmpty)
-                //{
-                //    if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit.First(), pointsSplit.Last())
-                //        && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit.First(), pointsSplit.Last()))
-                //    {
-                //        pointsSplit.AddRange(pointsEmpty);
-                //    }
-                //    else
-                //    {
-                //        for (int i = 0; i < pointsSplit.Count - 1; i++)
-                //        {
-                //            if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit[i], pointsSplit[i + 1])
-                //                && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit[i], pointsSplit[i + 1]))
-                //            {
+                listPointsEmpty.Sort((a,b) => Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
+                foreach (var pointsEmpty in listPointsEmpty)
+                {
+                    if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit.First(), pointsSplit.Last())
+                        && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit.First(), pointsSplit.Last()))
+                    {
+                        pointsSplit.AddRange(pointsEmpty);
+                    }
+                    else
+                    {
+                        Debug.Log("sai kia");
+                        for (int i = 0; i < pointsSplit.Count - 1; i++)
+                        {
+                            if (CalculatorPoints.IsPointOnSegment(pointsEmpty.First(), pointsSplit[i], pointsSplit[i + 1])
+                                && CalculatorPoints.IsPointOnSegment(pointsEmpty.Last(), pointsSplit[i], pointsSplit[i + 1]))
+                            {
 
-                //            }
-                //        }
-                //    }
-                //}
-                pointsSplit.AddRange(listPointsEmpty.SelectMany(point => point).ToList().Distinct());
+                            }
+                        }
+                    }
+                }
+                //var points = listPointsEmpty.SelectMany(point => point).ToList();
+                //pointsSplit.AddRange(points);
                 polygonCollider2D.SetPath(0, pointsSplit);
             }
 
-
-            //pointsSplit.AddRange(listPointsEmpty.SelectMany(point => point).ToList().Distinct());
-            //polygonCollider2D.SetPath(0, pointsSplit);
         }
         void SpawnSlices(List<List<Vector2>> listPointsSplit)
         {
@@ -422,6 +421,24 @@ public class Cutter : MonoBehaviour
             }
         }
         ResetCutPos();
+    }
+    int countDebug=0;
+    private void ShowDebugLine(List<Vector2> points, Color color)
+    {
+        countDebug++;
+        for(int i = 0; i < points.Count-1; i++)
+        {
+            Debug.DrawLine(points[i]+Vector2.up*countDebug, points[i+1] + Vector2.up * countDebug, color,100);
+        }
+    }
+    private IEnumerator ShowDebugLineSlow(List<Vector2> points, Color color)
+    {
+        countDebug++;
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            Debug.DrawLine(points[i] + Vector2.up * countDebug, points[i + 1] + Vector2.up * countDebug, color, 100);
+            yield return new WaitForSeconds(0.3f);
+        }
     }
     private void OnDrawGizmos()
     {
