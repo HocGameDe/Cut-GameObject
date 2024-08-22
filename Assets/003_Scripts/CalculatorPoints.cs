@@ -78,8 +78,7 @@ public static class CalculatorPoints
     {
         Vector2 p1;
         Vector2 p2;
-        float sumS;
-        sumS = 0;
+        float sumS=0;
         for (int i = 0; i < points.Count; i++)
         {
             p1 = points[i];
