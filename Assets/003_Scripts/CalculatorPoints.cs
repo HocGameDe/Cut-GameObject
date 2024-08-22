@@ -38,7 +38,7 @@ public static class CalculatorPoints
         Vector3 linearEquation = LinearEquations(start, end);
         return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
                Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
-               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= 0.001f; 
+               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= 0.001f;
     }
     public static bool IsPointOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
@@ -78,7 +78,7 @@ public static class CalculatorPoints
     {
         Vector2 p1;
         Vector2 p2;
-        float sumS=0;
+        float sumS = 0;
         for (int i = 0; i < points.Count; i++)
         {
             p1 = points[i];
@@ -136,7 +136,7 @@ public static class CalculatorPoints
         Vector3 linearEquation = LinearEquations(A, B);
         float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
         return dAB;
-    } 
+    }
     public static float DistanceFromPointToLine(Vector2 point, Vector3 linearEquation)
     {
         float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
@@ -153,7 +153,10 @@ public static class CalculatorPoints
         int count = polygon.Count;
         bool result = false;
         int j = count - 1;
-
+        for (int i = 0; i < count; i++)
+        {
+            if (IsPointOnSegment(point, polygon[i], polygon[(i + 1)%count])) return true;
+        }
         for (int i = 0; i < count; i++)
         {
             if (polygon[i].y < point.y && polygon[j].y >= point.y || polygon[j].y < point.y && polygon[i].y >= point.y)
@@ -174,9 +177,9 @@ public static class CalculatorPoints
         {
             if (!IsPointInPolygon(point, polygonB))
             {
-                return false; 
+                return false;
             }
         }
-        return true; 
+        return true;
     }
 }

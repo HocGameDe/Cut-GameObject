@@ -311,48 +311,43 @@ public class Cutter : MonoBehaviour
                     Debug.Log("All point out");
                     continue;
                 }
+                if(path.All(point => CalculatorPoints.IsPointInPolygon(point, pointsSplit)))
+                {
+                    polygonCollider2D.pathCount++;
+                    polygonCollider2D.SetPath(polygonCollider2D.pathCount - 1, path);
+                    Debug.Log("All");
+                    continue;
+                }
                 List<List<Vector2>> pointsEmptySplit;
                 List<Vector2> pointsEmpty;
                 bool direction = CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), pointsSplit[1]);
-
-                pointsEmptySplit = GetListPointsSplit(path, pointsSplit.First(), pointsSplit.Last()); //Debug.LogWarning("pointsEmptySplit= " + pointsEmptySplit.Count);              
-                StandardizedHeadTail(pointsEmptySplit, pointsSplit.First(), pointsSplit.Last()); //Debug.LogWarning("pointsEmptySplit= " + pointsEmptySplit.Count);
+                pointsEmptySplit = GetListPointsSplit(path, pointsSplit.First(), pointsSplit.Last());             
+                StandardizedHeadTail(pointsEmptySplit, pointsSplit.First(), pointsSplit.Last());
+                pointsEmptySplit.Sort((a, b) => isHavePointsMain ? Vector2.Distance(a.First(), pointsMain.Last()).CompareTo(Vector2.Distance(b.First(), pointsMain.Last()))
+                                                                : Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
                 pointsEmptySplit.ForEach(points => InsertCutPointIntoPoints(path, points, pointsSplit.First(), pointsSplit.Last()));
-                //pointsEmptySplit.ForEach(points => Debug.Log("check "+CalculatorPoints.IsCounterClockwise(points)));
                 pointsEmpty = pointsEmptySplit.Where(points => CalculatorPoints.IsCounterClockwise(points) == false && CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), points[1])==direction)
                                               .SelectMany(point => point)
-                                              .Where(point=> CalculatorPoints.IsPointInPolygon(point, pointsSplit))
+                                              .Where(point=> CalculatorPoints.IsPointInPolygon(point, pointsSplit) /*|| CalculatorPoints.IsPointOnSegment(point, pointsSplit.First(), pointsSplit.Last())*/)
                                               .ToList();
-                //Debug.LogWarning("x= " + pointsEmpty.Count());
                 if (pointsEmpty.Count <= 0)
                 {
                     Debug.Log("Zero");
                     continue;
                 }
-                if (pointsEmpty.Count == path.Count)
-                {
-                    polygonCollider2D.pathCount++;
-                    polygonCollider2D.SetPath(polygonCollider2D.pathCount - 1, pointsEmpty);
-                    Debug.Log("All");
-                    continue;
-                }
-                else
-                {
-                    //pointsEmpty.Reverse<Vector2>();
-                    listPointsEmpty.Add(pointsEmpty);
-                    Debug.Log("Add");
-                }
+                listPointsEmpty.Add(pointsEmpty);
+                Debug.Log("Add");
             }
+
             if (listPointsEmpty.Count > 0)
             {
+
                 listPointsEmpty.Sort((a, b) => isHavePointsMain ? Vector2.Distance(a.First(), pointsMain.Last()).CompareTo(Vector2.Distance(b.First(), pointsMain.Last()))
                                                                 : Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
-                StartCoroutine( ShowDebugLineSlow(listPointsEmpty.SelectMany(p=>p).ToList(), Color.green));
-                StartCoroutine(ShowDebugLineSlow(pointsSplit , Color.red));
+                
                 if (CalculatorPoints.IsPointOnSegment(listPointsEmpty.First().First(), pointsSplit.First(), pointsSplit.Last())
                     && CalculatorPoints.IsPointOnSegment(listPointsEmpty.Last().Last(), pointsSplit.First(), pointsSplit.Last()))
                 {
-                    Debug.Log("Th1");
                     Debug.Log("Th1");
                     var points = listPointsEmpty.SelectMany(point => point).ToList();
                     pointsSplit.AddRange(points);
@@ -362,6 +357,8 @@ public class Cutter : MonoBehaviour
                 {
                     Debug.Log("Th2");
                     listPointsEmpty.AddRange(listPointsClockwise);
+                    listPointsEmpty.Sort((a, b) => isHavePointsMain ? Vector2.Distance(a.First(), pointsMain.Last()).CompareTo(Vector2.Distance(b.First(), pointsMain.Last()))
+                                                          : Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
                     var points = listPointsEmpty.SelectMany(point => point).ToList();
                     pointsSplit = pointsMain.ToList();
                     pointsSplit.AddRange(points);
@@ -396,7 +393,7 @@ public class Cutter : MonoBehaviour
 
             generateMesh.GenerateMeshFilter(points, objectCutComponent, target.pathOrigin);
             AddEmptyPolygon(points, objectCutComponent.polygonCollider2D);
-
+            
             objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorPoints.IsPointOnLeftLine(pointBeginCollision, pointEndCollision, points[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
 
         }
@@ -435,7 +432,7 @@ public class Cutter : MonoBehaviour
     int countDebug = 0;
     private void ShowDebugLine(List<Vector2> points, Color color)
     {
-        countDebug++;
+        //countDebug+=3;
         for (int i = 0; i < points.Count - 1; i++)
         {
             Debug.DrawLine(points[i] + Vector2.right * countDebug, points[i + 1] + Vector2.right * countDebug, color, 100);
@@ -443,7 +440,7 @@ public class Cutter : MonoBehaviour
     }
     private IEnumerator ShowDebugLineSlow(List<Vector2> points, Color color)
     {
-        countDebug++;
+        //countDebug++;
         for (int i = 0; i < points.Count - 1; i++)
         {
             Debug.DrawLine(points[i] + Vector2.right * countDebug, points[i + 1] + Vector2.right * countDebug, color, 100);
