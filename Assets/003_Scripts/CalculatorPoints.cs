@@ -143,10 +143,41 @@ public static class CalculatorPoints
         float dAB = Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) / Mathf.Sqrt(linearEquation.x * linearEquation.x + linearEquation.y * linearEquation.y);
         return dAB;
     }
-    public static bool IsPointInsideArea(Vector2 point, Vector2 A, Vector2 B)
+    public static bool IsPointInsideAreaTwoDelta(Vector2 point, Vector2 A, Vector2 B)
     {
         float distanceDeltaA = DistanceFromPointToLine(point, LinearEquations(A, A, B));
         float distanceDeltaB = DistanceFromPointToLine(point, LinearEquations(B, A, B));
-        return distanceDeltaA + distanceDeltaB - Vector2.Distance(A, B) <= Mathf.Epsilon;
+        return distanceDeltaA + distanceDeltaB - Vector2.Distance(A, B) <= 0.001f;
+    }
+    public static bool IsPointInPolygon(Vector2 point, List<Vector2> polygon)
+    {
+        int count = polygon.Count;
+        bool result = false;
+        int j = count - 1;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (polygon[i].y < point.y && polygon[j].y >= point.y || polygon[j].y < point.y && polygon[i].y >= point.y)
+            {
+                if (polygon[i].x + (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) * (polygon[j].x - polygon[i].x) < point.x)
+                {
+                    result = !result;
+                }
+            }
+            j = i;
+        }
+
+        return result;
+    }
+    public static bool IsPolygonAInPolygonB(List<Vector2> polygonA, List<Vector2> polygonB)
+    {
+        foreach (var point in polygonA)
+        {
+            if (!IsPointInPolygon(point, polygonB))
+            {
+                return false; 
+            }
+        }
+        return true; 
     }
 }
