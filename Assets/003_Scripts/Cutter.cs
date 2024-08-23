@@ -298,11 +298,12 @@ public class Cutter : MonoBehaviour
             }
             return true;
         }
-        void AddEmptyPolygon(List<Vector2> pointsSplit, PolygonCollider2D polygonCollider2D)
+        void AddEmptyPolygon( List<Vector2> pointsSplit, PolygonCollider2D polygonCollider2D,ObjectCanBeCut objectCutComponent)
         {
             if (listPaths.Count <= 1) return;
             List<List<Vector2>> listPointsEmpty = new List<List<Vector2>>();
             bool isHavePointsMain = listPointsClockwise.Count > 0 && pointsMain.Any(point => pointsSplit.Contains(point) && point != pointsMain.First() && point != pointsMain.Last() && point != pointsSplit.First() && point != pointsSplit.Last());
+            List<List<Vector2>> listPointsEmptyClockwise = new List<List<Vector2>>();
             foreach (var path in listPaths.Skip(1))
             {
                 DeletePointRedundant(path);
@@ -328,8 +329,9 @@ public class Cutter : MonoBehaviour
                 pointsEmptySplit.ForEach(points => InsertCutPointIntoPoints(path, points, pointsSplit.First(), pointsSplit.Last()));
                 pointsEmpty = pointsEmptySplit.Where(points => CalculatorPoints.IsCounterClockwise(points) == false && CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), points[1])==direction)
                                               .SelectMany(point => point)
-                                              .Where(point=> CalculatorPoints.IsPointInPolygon(point, pointsSplit) /*|| CalculatorPoints.IsPointOnSegment(point, pointsSplit.First(), pointsSplit.Last())*/)
+                                              .Where(point=> CalculatorPoints.IsPointInPolygon(point, pointsSplit))
                                               .ToList();
+                listPointsEmptyClockwise.AddRange(pointsEmptySplit.Where(points => CalculatorPoints.IsCounterClockwise(points) && CalculatorPoints.IsPointOnLeftLine(pointsSplit.First(), pointsSplit.Last(), points[1]) == direction));
                 if (pointsEmpty.Count <= 0)
                 {
                     Debug.Log("Zero");
@@ -344,7 +346,22 @@ public class Cutter : MonoBehaviour
 
                 listPointsEmpty.Sort((a, b) => isHavePointsMain ? Vector2.Distance(a.First(), pointsMain.Last()).CompareTo(Vector2.Distance(b.First(), pointsMain.Last()))
                                                                 : Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
-                
+
+                foreach (var pointsEmptyClockwise in listPointsEmptyClockwise)
+                {
+                    List<Vector2> listPoint = null;
+                    foreach (var list in listPointsClockwise) if (CalculatorPoints.IsPolygonAInPolygonB(list, pointsEmptyClockwise)) listPoint = list;
+                    if (listPoint != null)
+                    {
+                        listPoint.AddRange(pointsEmptyClockwise);
+                        listPointsClockwise.Remove(listPoint);
+                    }
+                    else
+                    {
+                        SpawnNewSlice(pointsEmptyClockwise.ToList());
+                    }
+                }
+
                 if (CalculatorPoints.IsPointOnSegment(listPointsEmpty.First().First(), pointsSplit.First(), pointsSplit.Last())
                     && CalculatorPoints.IsPointOnSegment(listPointsEmpty.Last().Last(), pointsSplit.First(), pointsSplit.Last()))
                 {
@@ -355,7 +372,7 @@ public class Cutter : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("Th2");
+                    Debug.Log("Th2");                     
                     listPointsEmpty.AddRange(listPointsClockwise);
                     listPointsEmpty.Sort((a, b) => isHavePointsMain ? Vector2.Distance(a.First(), pointsMain.Last()).CompareTo(Vector2.Distance(b.First(), pointsMain.Last()))
                                                           : Vector2.Distance(a.First(), pointsSplit.Last()).CompareTo(Vector2.Distance(b.First(), pointsSplit.Last())));
@@ -364,6 +381,7 @@ public class Cutter : MonoBehaviour
                     pointsSplit.AddRange(points);
                     polygonCollider2D.SetPath(0, pointsSplit);
                 }
+                //generateMesh.GenerateMeshFilter(pointsSplit, objectCutComponent, target.pathOrigin);
             }
 
         }
@@ -391,9 +409,9 @@ public class Cutter : MonoBehaviour
             objectCutComponent.texture2D = target.texture2D;
             objectCutComponent.polygonCollider2D.SetPath(0, points);
 
+            AddEmptyPolygon( points, objectCutComponent.polygonCollider2D, objectCutComponent);
             generateMesh.GenerateMeshFilter(points, objectCutComponent, target.pathOrigin);
-            AddEmptyPolygon(points, objectCutComponent.polygonCollider2D);
-            
+                      
             objectCutComponent.gameObject.AddComponent<Rigidbody2D>().AddForce((CalculatorPoints.IsPointOnLeftLine(pointBeginCollision, pointEndCollision, points[1]) == false ? 1 : -1) * (Vector2.Perpendicular(pointEndCollision - pointBeginCollision)).normalized * forceCut, ForceMode2D.Impulse);
 
         }
