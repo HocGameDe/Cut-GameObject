@@ -269,35 +269,6 @@ public class Cutter : MonoBehaviour
             }
             else Debug.LogError("GetIntersectionOfLines Error!");
         }
-        bool DeletePointRedundant(List<Vector2> points)
-        {
-            for (int i = 0; i < points.Count - 2; i++)
-            {
-                if (Vector2.Distance(points[i], points[i + 1]) <= 0.01f && points.Count > 3)
-                {
-                    points.RemoveAt(i + 1);
-                    i--;
-                }
-            }
-            Vector2 p1;
-            Vector2 p2;
-            for (int i = 0; i < points.Count && points.Count > 2; i++)
-            {
-                p1 = points[i == 0 ? points.Count - 1 : i - 1];
-                p2 = points[(i + 1) % points.Count];
-                if (!CalculatorPoints.CanFormTriangle(points[i], p1, p2))
-                {
-                    if (points.Count == 3)
-                    {
-                        Debug.LogWarning("GameObject has many combo tree points straight. ReCut!");
-                        return false;
-                    }
-                    points.RemoveAt(i);
-                    i--;
-                }
-            }
-            return true;
-        }
         void AddEmptyPolygon(List<Vector2> pointsSplit, PolygonCollider2D polygonCollider2D)
         {
             if (listPaths.Count <= 1) return;
@@ -410,7 +381,35 @@ public class Cutter : MonoBehaviour
         }
         //---------------------------------------------
     }
-
+    public bool DeletePointRedundant(List<Vector2> points)
+    {
+        for (int i = 0; i < points.Count - 2; i++)
+        {
+            if (Vector2.Distance(points[i], points[i + 1]) <= 0.01f && points.Count > 3)
+            {
+                points.RemoveAt(i + 1);
+                i--;
+            }
+        }
+        Vector2 p1;
+        Vector2 p2;
+        for (int i = 0; i < points.Count && points.Count > 2; i++)
+        {
+            p1 = points[i == 0 ? points.Count - 1 : i - 1];
+            p2 = points[(i + 1) % points.Count];
+            if (!CalculatorPoints.CanFormTriangle(points[i], p1, p2))
+            {
+                if (points.Count == 3)
+                {
+                    Debug.LogWarning("GameObject has many combo tree points straight. ReCut!");
+                    return false;
+                }
+                points.RemoveAt(i);
+                i--;
+            }
+        }
+        return true;
+    }
     public void EnterObject()
     {
         if (!cutting || !cutContinous) return;

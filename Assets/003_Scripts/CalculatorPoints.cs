@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using UnityEngine;
 
@@ -173,9 +174,18 @@ public static class CalculatorPoints
     }
     public static bool IsPolygonAInPolygonB(List<Vector2> polygonA, List<Vector2> polygonB)
     {
-        foreach (var point in polygonA)
+        for (int i = 0; i < polygonA.Count; i++)
         {
-            if (!IsPointInPolygon(point, polygonB))
+            if (!IsPointInPolygon(polygonA[i], polygonB))
+            {
+                return false;
+            }
+        }
+        Vector2 pointCenter;
+        for (int i=0;i<polygonA.Count;i++)
+        {
+            pointCenter = (polygonA[i]+polygonA[(i+1)%polygonA.Count])/2;
+            if (!IsPointInPolygon(pointCenter, polygonB))
             {
                 return false;
             }
