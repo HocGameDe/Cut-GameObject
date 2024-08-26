@@ -39,7 +39,7 @@ public static class CalculatorPoints
         Vector3 linearEquation = LinearEquations(start, end);
         return Mathf.Min(start.x, end.x) <= point.x && point.x <= Mathf.Max(start.x, end.x) &&
                Mathf.Min(start.y, end.y) <= point.y && point.y <= Mathf.Max(start.y, end.y) &&
-               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= 0.001f;
+               Mathf.Abs(linearEquation.x * point.x + linearEquation.y * point.y + linearEquation.z) <= 0.00001f;
     }
     public static bool IsPointOnLeftLine(Vector2 pointHead, Vector2 pointTail, Vector2 point)
     {
@@ -86,24 +86,38 @@ public static class CalculatorPoints
             p2 = points[(i + 1) % points.Count];
             sumS += (p2.x - p1.x) * (p2.y + p1.y);
         }
+        if (sumS == 0) Debug.Log("chieu kim dong ho =0");
         return sumS < 0;
     }
     public static bool IsAnyPointsInTriangle(Vector2 A, Vector2 B, Vector2 C, List<Vector2> points)
     {
         return points.Any(p => p != A && p != B && p != C && IsPointInTriangle(A, B, C, p));
     }
-    public static bool IsPointInTriangle(Vector2 A, Vector2 B, Vector2 C, Vector2 D)
+    public static bool IsAnyPointsInTrianglePerfect(Vector2 A, Vector2 B, Vector2 C, List<Vector2> points)
+    {
+        return points.Any(p => p != A && p != B && p != C && IsPointInTrianglePerfect(A, B, C, p));
+    }
+    public static bool IsPointInTriangle(Vector2 A, Vector2 B, Vector2 C, Vector2 p)
     {
         float areaABC = Area(A, B, C);
-        float areaABD = Area(A, B, D);
-        float areaBCD = Area(B, C, D);
-        float areaCAD = Area(C, A, D);
-        return Mathf.Abs(areaABC - (areaABD + areaBCD + areaCAD)) < 0.001f;
+        float areaABD = Area(A, B, p);
+        float areaBCD = Area(B, C, p);
+        float areaCAD = Area(C, A, p);
+        return Mathf.Abs(areaABC - (areaABD + areaBCD + areaCAD)) < 0.0001f;
+    }
+    public static bool IsPointInTrianglePerfect(Vector2 A, Vector2 B, Vector2 C, Vector2 p)
+    {
+        if (IsPointOnSegment(p, A, B) || IsPointOnSegment(p, C, B) || IsPointOnSegment(p, A, C)) return false;
+        float areaABC = Area(A, B, C);
+        float areaABD = Area(A, B, p);
+        float areaBCD = Area(B, C, p);
+        float areaCAD = Area(C, A, p);
+        return Mathf.Abs(areaABC - (areaABD + areaBCD + areaCAD)) < 0.0001f;
     }
     public static bool CanFormTriangle(Vector2 A, Vector2 B, Vector2 C)
     {
         float area = Area(A, B, C);
-        return area >= 0.005f;
+        return area > 0.0005f;
     }
     public static float Area(Vector2 p1, Vector2 p2, Vector2 p3)
     {
@@ -191,5 +205,66 @@ public static class CalculatorPoints
             }
         }
         return true;
+    }
+
+    public static float CrossProduct(Vector2 v1, Vector2 v2)
+    {
+        return v1.x * v2.y - v1.y * v2.x;
+    }
+
+    // Hàm kiểm tra hai đoạn thẳng có cắt nhau không
+    public static bool DoLinesIntersect(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
+    {
+        // Vector chỉ hướng của hai đoạn thẳng
+        Vector2 d1 = p2 - p1;
+        Vector2 d2 = p4 - p3;
+
+        // Vector từ điểm đầu tiên của đoạn thẳng này đến điểm đầu tiên của đoạn thẳng kia
+        Vector2 delta = p3 - p1;
+
+        // Tính các tích có hướng
+        float cross1 = CrossProduct(d1, d2);
+        float cross2 = CrossProduct(delta, d1);
+        float cross3 = CrossProduct(delta, d2);
+
+        // Nếu cross1 == 0, hai đoạn thẳng song song hoặc đồng phẳng
+        if (Mathf.Abs(cross1) < Mathf.Epsilon)
+        {
+            return false; // Hai đoạn thẳng không cắt nhau
+        }
+
+        // Tính t và u theo tỷ lệ
+        float t = cross3 / cross1;
+        float u = cross2 / cross1;
+
+        // Kiểm tra xem t và u có nằm trong đoạn [0, 1] hay không
+        return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+    }
+    public static bool DoLinesIntersectPerfect(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
+    {
+        // Vector chỉ hướng của hai đoạn thẳng
+        Vector2 d1 = p2 - p1;
+        Vector2 d2 = p4 - p3;
+
+        // Vector từ điểm đầu tiên của đoạn thẳng này đến điểm đầu tiên của đoạn thẳng kia
+        Vector2 delta = p3 - p1;
+
+        // Tính các tích có hướng
+        float cross1 = CrossProduct(d1, d2);
+        float cross2 = CrossProduct(delta, d1);
+        float cross3 = CrossProduct(delta, d2);
+
+        // Nếu cross1 == 0, hai đoạn thẳng song song hoặc đồng phẳng
+        if (Mathf.Abs(cross1) < Mathf.Epsilon)
+        {
+            return false; // Hai đoạn thẳng không cắt nhau
+        }
+
+        // Tính t và u theo tỷ lệ
+        float t = cross3 / cross1;
+        float u = cross2 / cross1;
+
+        // Kiểm tra xem t và u có nằm trong đoạn [0, 1] hay không
+        return t > 0 && t < 1 && u > 0 && u < 1;
     }
 }

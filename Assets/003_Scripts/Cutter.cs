@@ -1,9 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using Color = UnityEngine.Color;
 [RequireComponent(typeof(GenerateMesh))]
@@ -21,7 +18,6 @@ public class Cutter : MonoBehaviour
     [SerializeField] private Vector2 endCutPos;
     [SerializeField] private Vector2 pointBeginCollision;
     [SerializeField] private Vector2 pointEndCollision;
-
     private List<List<Vector2>> listPaths = new List<List<Vector2>>();
 
     private RaycastHit2D hit;
@@ -37,6 +33,10 @@ public class Cutter : MonoBehaviour
     {
         InputManager.Instance.SubEventInput(EventInputCategory.MouseDownLeft, SetBeginCutPos);
         InputManager.Instance.SubEventInput(EventInputCategory.MouseDownLeft, () => cutting = true);
+        InputManager.Instance.SubEventInput(EventInputCategory.MouseDownLeft, () =>
+        {
+           
+        });
         InputManager.Instance.SubEventInput(EventInputCategory.MouseUpLeft, Cut);
         InputManager.Instance.SubEventInput(EventInputCategory.MouseUpLeft, () => cutting = false);
     }
@@ -385,7 +385,7 @@ public class Cutter : MonoBehaviour
     {
         for (int i = 0; i < points.Count - 2; i++)
         {
-            if (Vector2.Distance(points[i], points[i + 1]) <= 0.01f && points.Count > 3)
+            if (Vector2.Distance(points[i], points[i + 1]) <= 0.05f && points.Count > 3)
             {
                 points.RemoveAt(i + 1);
                 i--;
@@ -439,23 +439,11 @@ public class Cutter : MonoBehaviour
         }
         ResetCutPos();
     }
-    int countDebug = 0;
-    private void ShowDebugLine(List<Vector2> points, Color color, int incPosition)
+
+    [SerializeField] private GameObject sword;
+    private void Update()
     {
-        countDebug += incPosition;
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            Debug.DrawLine(points[i] + Vector2.right * countDebug, points[i + 1] + Vector2.right * countDebug, color, 100);
-        }
-    }
-    private IEnumerator ShowDebugLineSlow(List<Vector2> points, Color color, int incPosition)
-    {
-        countDebug += incPosition;
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            Debug.DrawLine(points[i] + Vector2.right * countDebug, points[i + 1] + Vector2.right * countDebug, color, 100);
-            yield return new WaitForSeconds(0.3f);
-        }
+        sword.transform.position = InputManager.Instance.mousePoistion;
     }
     private void OnDrawGizmos()
     {
